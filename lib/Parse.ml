@@ -43,7 +43,7 @@ let extras = [
 
 let children_regexps : (string * Run.exp option) list = [
   "flow_symbol_name", None;
-  "unescaped_double_jsx_string_fragment", None;
+  "undefined", None;
   "identifier", None;
   "meta_property",
   Some (
@@ -63,9 +63,8 @@ let children_regexps : (string * Run.exp option) list = [
   "comment", None;
   "private_property_identifier", None;
   "false", None;
-  "unescaped_single_jsx_string_fragment", None;
+  "unescaped_double_string_fragment", None;
   "null", None;
-  "undefined", None;
   "semgrep_expression_ellipsis", None;
   "empty_statement", None;
   "accessibility_modifier",
@@ -76,7 +75,7 @@ let children_regexps : (string * Run.exp option) list = [
       Token (Literal "protected");
     |];
   );
-  "unescaped_double_string_fragment", None;
+  "unescaped_double_jsx_string_fragment", None;
   "html_character_reference", None;
   "html_comment", None;
   "function_signature_automatic_semicolon", None;
@@ -119,6 +118,7 @@ let children_regexps : (string * Run.exp option) list = [
       Token (Literal "object");
     |];
   );
+  "unescaped_single_string_fragment", None;
   "ternary_qmark", None;
   "this", None;
   "hash_bang_line", None;
@@ -130,8 +130,23 @@ let children_regexps : (string * Run.exp option) list = [
   "escape_sequence", None;
   "jsx_text", None;
   "regex_pattern", None;
-  "unescaped_single_string_fragment", None;
+  "unescaped_single_jsx_string_fragment", None;
   "automatic_semicolon", None;
+  "type_keyword_nested_identifier",
+  Some (
+    Seq [
+      Alt [|
+        Alt [|
+          Token (Literal "component");
+          Token (Literal "unique");
+          Token (Literal "object");
+        |];
+        Token (Name "type_keyword_nested_identifier");
+      |];
+      Token (Literal ".");
+      Token (Name "identifier");
+    ];
+  );
   "import_identifier",
   Some (
     Alt [|
@@ -169,31 +184,6 @@ let children_regexps : (string * Run.exp option) list = [
       Token (Name "identifier");
     ];
   );
-  "jsx_string",
-  Some (
-    Alt [|
-      Seq [
-        Token (Literal "\"");
-        Repeat (
-          Alt [|
-            Token (Name "unescaped_double_jsx_string_fragment");
-            Token (Name "html_character_reference");
-          |];
-        );
-        Token (Literal "\"");
-      ];
-      Seq [
-        Token (Literal "'");
-        Repeat (
-          Alt [|
-            Token (Name "unescaped_single_jsx_string_fragment");
-            Token (Name "html_character_reference");
-          |];
-        );
-        Token (Literal "'");
-      ];
-    |];
-  );
   "number_",
   Some (
     Seq [
@@ -218,17 +208,6 @@ let children_regexps : (string * Run.exp option) list = [
       |];
     ];
   );
-  "regex",
-  Some (
-    Seq [
-      Token (Literal "/");
-      Token (Name "regex_pattern");
-      Token (Name "imm_tok_prec_p1_slash");
-      Opt (
-        Token (Name "regex_flags");
-      );
-    ];
-  );
   "string",
   Some (
     Alt [|
@@ -248,6 +227,42 @@ let children_regexps : (string * Run.exp option) list = [
           Alt [|
             Token (Name "unescaped_single_string_fragment");
             Token (Name "escape_sequence");
+          |];
+        );
+        Token (Literal "'");
+      ];
+    |];
+  );
+  "regex",
+  Some (
+    Seq [
+      Token (Literal "/");
+      Token (Name "regex_pattern");
+      Token (Name "imm_tok_prec_p1_slash");
+      Opt (
+        Token (Name "regex_flags");
+      );
+    ];
+  );
+  "jsx_string",
+  Some (
+    Alt [|
+      Seq [
+        Token (Literal "\"");
+        Repeat (
+          Alt [|
+            Token (Name "unescaped_double_jsx_string_fragment");
+            Token (Name "html_character_reference");
+          |];
+        );
+        Token (Literal "\"");
+      ];
+      Seq [
+        Token (Literal "'");
+        Repeat (
+          Alt [|
+            Token (Name "unescaped_single_jsx_string_fragment");
+            Token (Name "html_character_reference");
           |];
         );
         Token (Literal "'");
@@ -296,6 +311,12 @@ let children_regexps : (string * Run.exp option) list = [
       Alt [|
         Token (Name "identifier");
         Token (Name "nested_identifier");
+        Alt [|
+          Token (Literal "component");
+          Token (Literal "unique");
+          Token (Literal "object");
+        |];
+        Token (Name "type_keyword_nested_identifier");
       |];
       Token (Literal ".");
       Token (Name "identifier");
@@ -626,6 +647,8 @@ let children_regexps : (string * Run.exp option) list = [
                   ];
                 |];
               ];
+              Token (Name "flow_component_signature");
+              Token (Name "flow_hook_signature");
             |];
           ];
           Token (Name "flow_component_signature");
@@ -735,39 +758,33 @@ let children_regexps : (string * Run.exp option) list = [
       Alt [|
         Alt [|
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
           Token (Name "identifier");
         |];
@@ -823,39 +840,33 @@ let children_regexps : (string * Run.exp option) list = [
               Token (Name "identifier");
             |];
             Alt [|
-              Alt [|
-                Token (Literal "declare");
-                Token (Literal "namespace");
-                Token (Literal "type");
-                Token (Literal "public");
-                Token (Literal "private");
-                Token (Literal "protected");
-                Token (Literal "override");
-                Token (Literal "readonly");
-                Token (Literal "module");
-                Token (Literal "any");
-                Token (Literal "number");
-                Token (Literal "boolean");
-                Token (Literal "string");
-                Token (Literal "symbol");
-                Token (Literal "export");
-                Token (Literal "object");
-                Token (Literal "new");
-                Alt [|
-                  Token (Literal "get");
-                  Token (Literal "set");
-                  Token (Literal "async");
-                  Token (Literal "static");
-                  Token (Literal "export");
-                  Token (Literal "let");
-                |];
-              |];
+              Token (Literal "declare");
+              Token (Literal "namespace");
+              Token (Literal "type");
+              Token (Literal "public");
+              Token (Literal "private");
+              Token (Literal "protected");
+              Token (Literal "override");
+              Token (Literal "readonly");
+              Token (Literal "module");
+              Token (Literal "any");
+              Token (Literal "number");
+              Token (Literal "boolean");
+              Token (Literal "string");
+              Token (Literal "symbol");
+              Token (Literal "export");
+              Token (Literal "object");
+              Token (Literal "get");
+              Token (Literal "set");
+              Token (Literal "async");
+              Token (Literal "static");
               Token (Literal "accessor");
               Token (Literal "abstract");
               Token (Literal "using");
               Token (Literal "opaque");
               Token (Literal "component");
               Token (Literal "hook");
+              Token (Literal "unique");
             |];
             Token (Name "destructuring_pattern");
           |];
@@ -905,39 +916,33 @@ let children_regexps : (string * Run.exp option) list = [
         Token (Name "member_expression");
         Token (Name "subscript_expression");
         Alt [|
-          Alt [|
-            Token (Literal "declare");
-            Token (Literal "namespace");
-            Token (Literal "type");
-            Token (Literal "public");
-            Token (Literal "private");
-            Token (Literal "protected");
-            Token (Literal "override");
-            Token (Literal "readonly");
-            Token (Literal "module");
-            Token (Literal "any");
-            Token (Literal "number");
-            Token (Literal "boolean");
-            Token (Literal "string");
-            Token (Literal "symbol");
-            Token (Literal "export");
-            Token (Literal "object");
-            Token (Literal "new");
-            Alt [|
-              Token (Literal "get");
-              Token (Literal "set");
-              Token (Literal "async");
-              Token (Literal "static");
-              Token (Literal "export");
-              Token (Literal "let");
-            |];
-          |];
+          Token (Literal "declare");
+          Token (Literal "namespace");
+          Token (Literal "type");
+          Token (Literal "public");
+          Token (Literal "private");
+          Token (Literal "protected");
+          Token (Literal "override");
+          Token (Literal "readonly");
+          Token (Literal "module");
+          Token (Literal "any");
+          Token (Literal "number");
+          Token (Literal "boolean");
+          Token (Literal "string");
+          Token (Literal "symbol");
+          Token (Literal "export");
+          Token (Literal "object");
+          Token (Literal "get");
+          Token (Literal "set");
+          Token (Literal "async");
+          Token (Literal "static");
           Token (Literal "accessor");
           Token (Literal "abstract");
           Token (Literal "using");
           Token (Literal "opaque");
           Token (Literal "component");
           Token (Literal "hook");
+          Token (Literal "unique");
         |];
         Token (Name "identifier");
         Token (Name "parenthesized_expression");
@@ -1706,39 +1711,33 @@ let children_regexps : (string * Run.exp option) list = [
       Alt [|
         Token (Name "identifier");
         Alt [|
-          Alt [|
-            Token (Literal "declare");
-            Token (Literal "namespace");
-            Token (Literal "type");
-            Token (Literal "public");
-            Token (Literal "private");
-            Token (Literal "protected");
-            Token (Literal "override");
-            Token (Literal "readonly");
-            Token (Literal "module");
-            Token (Literal "any");
-            Token (Literal "number");
-            Token (Literal "boolean");
-            Token (Literal "string");
-            Token (Literal "symbol");
-            Token (Literal "export");
-            Token (Literal "object");
-            Token (Literal "new");
-            Alt [|
-              Token (Literal "get");
-              Token (Literal "set");
-              Token (Literal "async");
-              Token (Literal "static");
-              Token (Literal "export");
-              Token (Literal "let");
-            |];
-          |];
+          Token (Literal "declare");
+          Token (Literal "namespace");
+          Token (Literal "type");
+          Token (Literal "public");
+          Token (Literal "private");
+          Token (Literal "protected");
+          Token (Literal "override");
+          Token (Literal "readonly");
+          Token (Literal "module");
+          Token (Literal "any");
+          Token (Literal "number");
+          Token (Literal "boolean");
+          Token (Literal "string");
+          Token (Literal "symbol");
+          Token (Literal "export");
+          Token (Literal "object");
+          Token (Literal "get");
+          Token (Literal "set");
+          Token (Literal "async");
+          Token (Literal "static");
           Token (Literal "accessor");
           Token (Literal "abstract");
           Token (Literal "using");
           Token (Literal "opaque");
           Token (Literal "component");
           Token (Literal "hook");
+          Token (Literal "unique");
         |];
         Token (Name "string");
       |];
@@ -1988,39 +1987,33 @@ let children_regexps : (string * Run.exp option) list = [
                 Token (Name "identifier");
               |];
               Alt [|
-                Alt [|
-                  Token (Literal "declare");
-                  Token (Literal "namespace");
-                  Token (Literal "type");
-                  Token (Literal "public");
-                  Token (Literal "private");
-                  Token (Literal "protected");
-                  Token (Literal "override");
-                  Token (Literal "readonly");
-                  Token (Literal "module");
-                  Token (Literal "any");
-                  Token (Literal "number");
-                  Token (Literal "boolean");
-                  Token (Literal "string");
-                  Token (Literal "symbol");
-                  Token (Literal "export");
-                  Token (Literal "object");
-                  Token (Literal "new");
-                  Alt [|
-                    Token (Literal "get");
-                    Token (Literal "set");
-                    Token (Literal "async");
-                    Token (Literal "static");
-                    Token (Literal "export");
-                    Token (Literal "let");
-                  |];
-                |];
+                Token (Literal "declare");
+                Token (Literal "namespace");
+                Token (Literal "type");
+                Token (Literal "public");
+                Token (Literal "private");
+                Token (Literal "protected");
+                Token (Literal "override");
+                Token (Literal "readonly");
+                Token (Literal "module");
+                Token (Literal "any");
+                Token (Literal "number");
+                Token (Literal "boolean");
+                Token (Literal "string");
+                Token (Literal "symbol");
+                Token (Literal "export");
+                Token (Literal "object");
+                Token (Literal "get");
+                Token (Literal "set");
+                Token (Literal "async");
+                Token (Literal "static");
                 Token (Literal "accessor");
                 Token (Literal "abstract");
                 Token (Literal "using");
                 Token (Literal "opaque");
                 Token (Literal "component");
                 Token (Literal "hook");
+                Token (Literal "unique");
               |];
               Token (Name "destructuring_pattern");
             |];
@@ -2283,6 +2276,13 @@ let children_regexps : (string * Run.exp option) list = [
       ];
       Seq [
         Alt [|
+          Token (Literal "component");
+          Token (Literal "unique");
+        |];
+        Token (Name "type_arguments");
+      ];
+      Seq [
+        Alt [|
           Token (Name "type_query_member_expression_in_type_annotation");
           Token (Name "type_query_call_expression_in_type_annotation");
         |];
@@ -2374,39 +2374,33 @@ let children_regexps : (string * Run.exp option) list = [
           Alt [|
             Token (Name "identifier");
             Alt [|
-              Alt [|
-                Token (Literal "declare");
-                Token (Literal "namespace");
-                Token (Literal "type");
-                Token (Literal "public");
-                Token (Literal "private");
-                Token (Literal "protected");
-                Token (Literal "override");
-                Token (Literal "readonly");
-                Token (Literal "module");
-                Token (Literal "any");
-                Token (Literal "number");
-                Token (Literal "boolean");
-                Token (Literal "string");
-                Token (Literal "symbol");
-                Token (Literal "export");
-                Token (Literal "object");
-                Token (Literal "new");
-                Alt [|
-                  Token (Literal "get");
-                  Token (Literal "set");
-                  Token (Literal "async");
-                  Token (Literal "static");
-                  Token (Literal "export");
-                  Token (Literal "let");
-                |];
-              |];
+              Token (Literal "declare");
+              Token (Literal "namespace");
+              Token (Literal "type");
+              Token (Literal "public");
+              Token (Literal "private");
+              Token (Literal "protected");
+              Token (Literal "override");
+              Token (Literal "readonly");
+              Token (Literal "module");
+              Token (Literal "any");
+              Token (Literal "number");
+              Token (Literal "boolean");
+              Token (Literal "string");
+              Token (Literal "symbol");
+              Token (Literal "export");
+              Token (Literal "object");
+              Token (Literal "get");
+              Token (Literal "set");
+              Token (Literal "async");
+              Token (Literal "static");
               Token (Literal "accessor");
               Token (Literal "abstract");
               Token (Literal "using");
               Token (Literal "opaque");
               Token (Literal "component");
               Token (Literal "hook");
+              Token (Literal "unique");
             |];
           |];
           Token (Literal ":");
@@ -2625,39 +2619,33 @@ let children_regexps : (string * Run.exp option) list = [
       Alt [|
         Token (Name "identifier");
         Alt [|
-          Alt [|
-            Token (Literal "declare");
-            Token (Literal "namespace");
-            Token (Literal "type");
-            Token (Literal "public");
-            Token (Literal "private");
-            Token (Literal "protected");
-            Token (Literal "override");
-            Token (Literal "readonly");
-            Token (Literal "module");
-            Token (Literal "any");
-            Token (Literal "number");
-            Token (Literal "boolean");
-            Token (Literal "string");
-            Token (Literal "symbol");
-            Token (Literal "export");
-            Token (Literal "object");
-            Token (Literal "new");
-            Alt [|
-              Token (Literal "get");
-              Token (Literal "set");
-              Token (Literal "async");
-              Token (Literal "static");
-              Token (Literal "export");
-              Token (Literal "let");
-            |];
-          |];
+          Token (Literal "declare");
+          Token (Literal "namespace");
+          Token (Literal "type");
+          Token (Literal "public");
+          Token (Literal "private");
+          Token (Literal "protected");
+          Token (Literal "override");
+          Token (Literal "readonly");
+          Token (Literal "module");
+          Token (Literal "any");
+          Token (Literal "number");
+          Token (Literal "boolean");
+          Token (Literal "string");
+          Token (Literal "symbol");
+          Token (Literal "export");
+          Token (Literal "object");
+          Token (Literal "get");
+          Token (Literal "set");
+          Token (Literal "async");
+          Token (Literal "static");
           Token (Literal "accessor");
           Token (Literal "abstract");
           Token (Literal "using");
           Token (Literal "opaque");
           Token (Literal "component");
           Token (Literal "hook");
+          Token (Literal "unique");
         |];
       |];
       Token (Literal ":");
@@ -2844,39 +2832,33 @@ let children_regexps : (string * Run.exp option) list = [
               Alt [|
                 Token (Name "identifier");
                 Alt [|
-                  Alt [|
-                    Token (Literal "declare");
-                    Token (Literal "namespace");
-                    Token (Literal "type");
-                    Token (Literal "public");
-                    Token (Literal "private");
-                    Token (Literal "protected");
-                    Token (Literal "override");
-                    Token (Literal "readonly");
-                    Token (Literal "module");
-                    Token (Literal "any");
-                    Token (Literal "number");
-                    Token (Literal "boolean");
-                    Token (Literal "string");
-                    Token (Literal "symbol");
-                    Token (Literal "export");
-                    Token (Literal "object");
-                    Token (Literal "new");
-                    Alt [|
-                      Token (Literal "get");
-                      Token (Literal "set");
-                      Token (Literal "async");
-                      Token (Literal "static");
-                      Token (Literal "export");
-                      Token (Literal "let");
-                    |];
-                  |];
+                  Token (Literal "declare");
+                  Token (Literal "namespace");
+                  Token (Literal "type");
+                  Token (Literal "public");
+                  Token (Literal "private");
+                  Token (Literal "protected");
+                  Token (Literal "override");
+                  Token (Literal "readonly");
+                  Token (Literal "module");
+                  Token (Literal "any");
+                  Token (Literal "number");
+                  Token (Literal "boolean");
+                  Token (Literal "string");
+                  Token (Literal "symbol");
+                  Token (Literal "export");
+                  Token (Literal "object");
+                  Token (Literal "get");
+                  Token (Literal "set");
+                  Token (Literal "async");
+                  Token (Literal "static");
                   Token (Literal "accessor");
                   Token (Literal "abstract");
                   Token (Literal "using");
                   Token (Literal "opaque");
                   Token (Literal "component");
                   Token (Literal "hook");
+                  Token (Literal "unique");
                 |];
               |];
             |];
@@ -2892,39 +2874,33 @@ let children_regexps : (string * Run.exp option) list = [
                   Alt [|
                     Token (Name "identifier");
                     Alt [|
-                      Alt [|
-                        Token (Literal "declare");
-                        Token (Literal "namespace");
-                        Token (Literal "type");
-                        Token (Literal "public");
-                        Token (Literal "private");
-                        Token (Literal "protected");
-                        Token (Literal "override");
-                        Token (Literal "readonly");
-                        Token (Literal "module");
-                        Token (Literal "any");
-                        Token (Literal "number");
-                        Token (Literal "boolean");
-                        Token (Literal "string");
-                        Token (Literal "symbol");
-                        Token (Literal "export");
-                        Token (Literal "object");
-                        Token (Literal "new");
-                        Alt [|
-                          Token (Literal "get");
-                          Token (Literal "set");
-                          Token (Literal "async");
-                          Token (Literal "static");
-                          Token (Literal "export");
-                          Token (Literal "let");
-                        |];
-                      |];
+                      Token (Literal "declare");
+                      Token (Literal "namespace");
+                      Token (Literal "type");
+                      Token (Literal "public");
+                      Token (Literal "private");
+                      Token (Literal "protected");
+                      Token (Literal "override");
+                      Token (Literal "readonly");
+                      Token (Literal "module");
+                      Token (Literal "any");
+                      Token (Literal "number");
+                      Token (Literal "boolean");
+                      Token (Literal "string");
+                      Token (Literal "symbol");
+                      Token (Literal "export");
+                      Token (Literal "object");
+                      Token (Literal "get");
+                      Token (Literal "set");
+                      Token (Literal "async");
+                      Token (Literal "static");
                       Token (Literal "accessor");
                       Token (Literal "abstract");
                       Token (Literal "using");
                       Token (Literal "opaque");
                       Token (Literal "component");
                       Token (Literal "hook");
+                      Token (Literal "unique");
                     |];
                   |];
                 |];
@@ -2942,39 +2918,33 @@ let children_regexps : (string * Run.exp option) list = [
       Alt [|
         Alt [|
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
           Token (Name "identifier");
         |];
@@ -2998,39 +2968,33 @@ let children_regexps : (string * Run.exp option) list = [
               Alt [|
                 Token (Name "identifier");
                 Alt [|
-                  Alt [|
-                    Token (Literal "declare");
-                    Token (Literal "namespace");
-                    Token (Literal "type");
-                    Token (Literal "public");
-                    Token (Literal "private");
-                    Token (Literal "protected");
-                    Token (Literal "override");
-                    Token (Literal "readonly");
-                    Token (Literal "module");
-                    Token (Literal "any");
-                    Token (Literal "number");
-                    Token (Literal "boolean");
-                    Token (Literal "string");
-                    Token (Literal "symbol");
-                    Token (Literal "export");
-                    Token (Literal "object");
-                    Token (Literal "new");
-                    Alt [|
-                      Token (Literal "get");
-                      Token (Literal "set");
-                      Token (Literal "async");
-                      Token (Literal "static");
-                      Token (Literal "export");
-                      Token (Literal "let");
-                    |];
-                  |];
+                  Token (Literal "declare");
+                  Token (Literal "namespace");
+                  Token (Literal "type");
+                  Token (Literal "public");
+                  Token (Literal "private");
+                  Token (Literal "protected");
+                  Token (Literal "override");
+                  Token (Literal "readonly");
+                  Token (Literal "module");
+                  Token (Literal "any");
+                  Token (Literal "number");
+                  Token (Literal "boolean");
+                  Token (Literal "string");
+                  Token (Literal "symbol");
+                  Token (Literal "export");
+                  Token (Literal "object");
+                  Token (Literal "get");
+                  Token (Literal "set");
+                  Token (Literal "async");
+                  Token (Literal "static");
                   Token (Literal "accessor");
                   Token (Literal "abstract");
                   Token (Literal "using");
                   Token (Literal "opaque");
                   Token (Literal "component");
                   Token (Literal "hook");
+                  Token (Literal "unique");
                 |];
               |];
             |];
@@ -3046,39 +3010,33 @@ let children_regexps : (string * Run.exp option) list = [
                   Alt [|
                     Token (Name "identifier");
                     Alt [|
-                      Alt [|
-                        Token (Literal "declare");
-                        Token (Literal "namespace");
-                        Token (Literal "type");
-                        Token (Literal "public");
-                        Token (Literal "private");
-                        Token (Literal "protected");
-                        Token (Literal "override");
-                        Token (Literal "readonly");
-                        Token (Literal "module");
-                        Token (Literal "any");
-                        Token (Literal "number");
-                        Token (Literal "boolean");
-                        Token (Literal "string");
-                        Token (Literal "symbol");
-                        Token (Literal "export");
-                        Token (Literal "object");
-                        Token (Literal "new");
-                        Alt [|
-                          Token (Literal "get");
-                          Token (Literal "set");
-                          Token (Literal "async");
-                          Token (Literal "static");
-                          Token (Literal "export");
-                          Token (Literal "let");
-                        |];
-                      |];
+                      Token (Literal "declare");
+                      Token (Literal "namespace");
+                      Token (Literal "type");
+                      Token (Literal "public");
+                      Token (Literal "private");
+                      Token (Literal "protected");
+                      Token (Literal "override");
+                      Token (Literal "readonly");
+                      Token (Literal "module");
+                      Token (Literal "any");
+                      Token (Literal "number");
+                      Token (Literal "boolean");
+                      Token (Literal "string");
+                      Token (Literal "symbol");
+                      Token (Literal "export");
+                      Token (Literal "object");
+                      Token (Literal "get");
+                      Token (Literal "set");
+                      Token (Literal "async");
+                      Token (Literal "static");
                       Token (Literal "accessor");
                       Token (Literal "abstract");
                       Token (Literal "using");
                       Token (Literal "opaque");
                       Token (Literal "component");
                       Token (Literal "hook");
+                      Token (Literal "unique");
                     |];
                   |];
                 |];
@@ -3269,39 +3227,33 @@ let children_regexps : (string * Run.exp option) list = [
             Token (Name "identifier");
           |];
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
           Token (Name "destructuring_pattern");
         |];
@@ -3323,39 +3275,33 @@ let children_regexps : (string * Run.exp option) list = [
             Token (Name "identifier");
           |];
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
           Token (Name "this");
           Token (Name "super");
@@ -3408,6 +3354,7 @@ let children_regexps : (string * Run.exp option) list = [
       Token (Name "flow_component_type");
       Token (Name "flow_interface_type");
       Token (Literal "component");
+      Token (Literal "unique");
       Token (Name "type_query_member_expression_in_type_annotation");
       Token (Name "type_query_call_expression_in_type_annotation");
     |];
@@ -3419,39 +3366,33 @@ let children_regexps : (string * Run.exp option) list = [
         Alt [|
           Token (Name "identifier");
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
         |];
         Token (Name "private_property_identifier");
@@ -3460,6 +3401,7 @@ let children_regexps : (string * Run.exp option) list = [
         Token (Name "computed_property_name");
       |];
       Token (Name "flow_symbol_name");
+      Token (Literal "new");
     |];
   );
   "property_signature",
@@ -3605,39 +3547,33 @@ let children_regexps : (string * Run.exp option) list = [
             Token (Name "identifier");
           |];
           Alt [|
-            Alt [|
-              Token (Literal "declare");
-              Token (Literal "namespace");
-              Token (Literal "type");
-              Token (Literal "public");
-              Token (Literal "private");
-              Token (Literal "protected");
-              Token (Literal "override");
-              Token (Literal "readonly");
-              Token (Literal "module");
-              Token (Literal "any");
-              Token (Literal "number");
-              Token (Literal "boolean");
-              Token (Literal "string");
-              Token (Literal "symbol");
-              Token (Literal "export");
-              Token (Literal "object");
-              Token (Literal "new");
-              Alt [|
-                Token (Literal "get");
-                Token (Literal "set");
-                Token (Literal "async");
-                Token (Literal "static");
-                Token (Literal "export");
-                Token (Literal "let");
-              |];
-            |];
+            Token (Literal "declare");
+            Token (Literal "namespace");
+            Token (Literal "type");
+            Token (Literal "public");
+            Token (Literal "private");
+            Token (Literal "protected");
+            Token (Literal "override");
+            Token (Literal "readonly");
+            Token (Literal "module");
+            Token (Literal "any");
+            Token (Literal "number");
+            Token (Literal "boolean");
+            Token (Literal "string");
+            Token (Literal "symbol");
+            Token (Literal "export");
+            Token (Literal "object");
+            Token (Literal "get");
+            Token (Literal "set");
+            Token (Literal "async");
+            Token (Literal "static");
             Token (Literal "accessor");
             Token (Literal "abstract");
             Token (Literal "using");
             Token (Literal "opaque");
             Token (Literal "component");
             Token (Literal "hook");
+            Token (Literal "unique");
           |];
           Token (Name "destructuring_pattern");
         |];
@@ -4303,7 +4239,7 @@ let trans_flow_symbol_name ((kind, body) : mt) : CST.flow_symbol_name =
   | Leaf v -> v
   | Children _ -> assert false
 
-let trans_unescaped_double_jsx_string_fragment ((kind, body) : mt) : CST.unescaped_double_jsx_string_fragment =
+let trans_undefined ((kind, body) : mt) : CST.undefined =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
@@ -4360,17 +4296,12 @@ let trans_false_ ((kind, body) : mt) : CST.false_ =
   | Leaf v -> v
   | Children _ -> assert false
 
-let trans_unescaped_single_jsx_string_fragment ((kind, body) : mt) : CST.unescaped_single_jsx_string_fragment =
+let trans_unescaped_double_string_fragment ((kind, body) : mt) : CST.unescaped_double_string_fragment =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
 
 let trans_null ((kind, body) : mt) : CST.null =
-  match body with
-  | Leaf v -> v
-  | Children _ -> assert false
-
-let trans_undefined ((kind, body) : mt) : CST.undefined =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
@@ -4405,7 +4336,7 @@ let trans_accessibility_modifier ((kind, body) : mt) : CST.accessibility_modifie
       )
   | Leaf _ -> assert false
 
-let trans_unescaped_double_string_fragment ((kind, body) : mt) : CST.unescaped_double_string_fragment =
+let trans_unescaped_double_jsx_string_fragment ((kind, body) : mt) : CST.unescaped_double_jsx_string_fragment =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
@@ -4546,6 +4477,11 @@ let trans_predefined_type ((kind, body) : mt) : CST.predefined_type =
       )
   | Leaf _ -> assert false
 
+let trans_unescaped_single_string_fragment ((kind, body) : mt) : CST.unescaped_single_string_fragment =
+  match body with
+  | Leaf v -> v
+  | Children _ -> assert false
+
 let trans_ternary_qmark ((kind, body) : mt) : CST.ternary_qmark =
   match body with
   | Leaf v -> v
@@ -4601,7 +4537,7 @@ let trans_regex_pattern ((kind, body) : mt) : CST.regex_pattern =
   | Leaf v -> v
   | Children _ -> assert false
 
-let trans_unescaped_single_string_fragment ((kind, body) : mt) : CST.unescaped_single_string_fragment =
+let trans_unescaped_single_jsx_string_fragment ((kind, body) : mt) : CST.unescaped_single_jsx_string_fragment =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
@@ -4610,6 +4546,45 @@ let trans_automatic_semicolon ((kind, body) : mt) : CST.automatic_semicolon =
   match body with
   | Leaf v -> v
   | Children _ -> assert false
+
+let rec trans_type_keyword_nested_identifier ((kind, body) : mt) : CST.type_keyword_nested_identifier =
+  match body with
+  | Children v ->
+      (match v with
+      | Seq [v0; v1; v2] ->
+          (
+            (match v0 with
+            | Alt (0, v) ->
+                `Choice_comp (
+                  (match v with
+                  | Alt (0, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (1, v) ->
+                      `Unique (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (2, v) ->
+                      `Obj (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | _ -> assert false
+                  )
+                )
+            | Alt (1, v) ->
+                `Type_kw_nested_id (
+                  trans_type_keyword_nested_identifier (Run.matcher_token v)
+                )
+            | _ -> assert false
+            )
+            ,
+            Run.trans_token (Run.matcher_token v1),
+            trans_identifier (Run.matcher_token v2)
+          )
+      | _ -> assert false
+      )
+  | Leaf _ -> assert false
 
 let trans_import_identifier ((kind, body) : mt) : CST.import_identifier =
   match body with
@@ -4653,6 +4628,7 @@ let rec trans_nested_identifier ((kind, body) : mt) : CST.nested_identifier =
   | Leaf _ -> assert false
 
 
+
 let trans_namespace_import ((kind, body) : mt) : CST.namespace_import =
   match body with
   | Children v ->
@@ -4687,69 +4663,6 @@ let rec trans_decorator_member_expression ((kind, body) : mt) : CST.decorator_me
             ,
             Run.trans_token (Run.matcher_token v1),
             trans_identifier (Run.matcher_token v2)
-          )
-      | _ -> assert false
-      )
-  | Leaf _ -> assert false
-
-
-let trans_jsx_string ((kind, body) : mt) : CST.jsx_string =
-  match body with
-  | Children v ->
-      (match v with
-      | Alt (0, v) ->
-          `DQUOT_rep_choice_unes_double_jsx_str_frag_DQUOT (
-            (match v with
-            | Seq [v0; v1; v2] ->
-                (
-                  Run.trans_token (Run.matcher_token v0),
-                  Run.repeat
-                    (fun v ->
-                      (match v with
-                      | Alt (0, v) ->
-                          `Unes_double_jsx_str_frag (
-                            trans_unescaped_double_jsx_string_fragment (Run.matcher_token v)
-                          )
-                      | Alt (1, v) ->
-                          `Html_char_ref (
-                            trans_html_character_reference (Run.matcher_token v)
-                          )
-                      | _ -> assert false
-                      )
-                    )
-                    v1
-                  ,
-                  Run.trans_token (Run.matcher_token v2)
-                )
-            | _ -> assert false
-            )
-          )
-      | Alt (1, v) ->
-          `SQUOT_rep_choice_unes_single_jsx_str_frag_SQUOT (
-            (match v with
-            | Seq [v0; v1; v2] ->
-                (
-                  Run.trans_token (Run.matcher_token v0),
-                  Run.repeat
-                    (fun v ->
-                      (match v with
-                      | Alt (0, v) ->
-                          `Unes_single_jsx_str_frag (
-                            trans_unescaped_single_jsx_string_fragment (Run.matcher_token v)
-                          )
-                      | Alt (1, v) ->
-                          `Html_char_ref (
-                            trans_html_character_reference (Run.matcher_token v)
-                          )
-                      | _ -> assert false
-                      )
-                    )
-                    v1
-                  ,
-                  Run.trans_token (Run.matcher_token v2)
-                )
-            | _ -> assert false
-            )
           )
       | _ -> assert false
       )
@@ -4815,23 +4728,6 @@ let trans_jsx_namespace_name ((kind, body) : mt) : CST.jsx_namespace_name =
       )
   | Leaf _ -> assert false
 
-let trans_regex ((kind, body) : mt) : CST.regex =
-  match body with
-  | Children v ->
-      (match v with
-      | Seq [v0; v1; v2; v3] ->
-          (
-            Run.trans_token (Run.matcher_token v0),
-            trans_regex_pattern (Run.matcher_token v1),
-            trans_imm_tok_prec_p1_slash (Run.matcher_token v2),
-            Run.opt
-              (fun v -> trans_regex_flags (Run.matcher_token v))
-              v3
-          )
-      | _ -> assert false
-      )
-  | Leaf _ -> assert false
-
 let trans_string_ ((kind, body) : mt) : CST.string_ =
   match body with
   | Children v ->
@@ -4879,6 +4775,85 @@ let trans_string_ ((kind, body) : mt) : CST.string_ =
                       | Alt (1, v) ->
                           `Esc_seq (
                             trans_escape_sequence (Run.matcher_token v)
+                          )
+                      | _ -> assert false
+                      )
+                    )
+                    v1
+                  ,
+                  Run.trans_token (Run.matcher_token v2)
+                )
+            | _ -> assert false
+            )
+          )
+      | _ -> assert false
+      )
+  | Leaf _ -> assert false
+
+let trans_regex ((kind, body) : mt) : CST.regex =
+  match body with
+  | Children v ->
+      (match v with
+      | Seq [v0; v1; v2; v3] ->
+          (
+            Run.trans_token (Run.matcher_token v0),
+            trans_regex_pattern (Run.matcher_token v1),
+            trans_imm_tok_prec_p1_slash (Run.matcher_token v2),
+            Run.opt
+              (fun v -> trans_regex_flags (Run.matcher_token v))
+              v3
+          )
+      | _ -> assert false
+      )
+  | Leaf _ -> assert false
+
+let trans_jsx_string ((kind, body) : mt) : CST.jsx_string =
+  match body with
+  | Children v ->
+      (match v with
+      | Alt (0, v) ->
+          `DQUOT_rep_choice_unes_double_jsx_str_frag_DQUOT (
+            (match v with
+            | Seq [v0; v1; v2] ->
+                (
+                  Run.trans_token (Run.matcher_token v0),
+                  Run.repeat
+                    (fun v ->
+                      (match v with
+                      | Alt (0, v) ->
+                          `Unes_double_jsx_str_frag (
+                            trans_unescaped_double_jsx_string_fragment (Run.matcher_token v)
+                          )
+                      | Alt (1, v) ->
+                          `Html_char_ref (
+                            trans_html_character_reference (Run.matcher_token v)
+                          )
+                      | _ -> assert false
+                      )
+                    )
+                    v1
+                  ,
+                  Run.trans_token (Run.matcher_token v2)
+                )
+            | _ -> assert false
+            )
+          )
+      | Alt (1, v) ->
+          `SQUOT_rep_choice_unes_single_jsx_str_frag_SQUOT (
+            (match v with
+            | Seq [v0; v1; v2] ->
+                (
+                  Run.trans_token (Run.matcher_token v0),
+                  Run.repeat
+                    (fun v ->
+                      (match v with
+                      | Alt (0, v) ->
+                          `Unes_single_jsx_str_frag (
+                            trans_unescaped_single_jsx_string_fragment (Run.matcher_token v)
+                          )
+                      | Alt (1, v) ->
+                          `Html_char_ref (
+                            trans_html_character_reference (Run.matcher_token v)
                           )
                       | _ -> assert false
                       )
@@ -4986,6 +4961,28 @@ let trans_nested_type_identifier ((kind, body) : mt) : CST.nested_type_identifie
             | Alt (1, v) ->
                 `Nested_id (
                   trans_nested_identifier (Run.matcher_token v)
+                )
+            | Alt (2, v) ->
+                `Choice_comp (
+                  (match v with
+                  | Alt (0, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (1, v) ->
+                      `Unique (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (2, v) ->
+                      `Obj (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | _ -> assert false
+                  )
+                )
+            | Alt (3, v) ->
+                `Type_kw_nested_id (
+                  trans_type_keyword_nested_identifier (Run.matcher_token v)
                 )
             | _ -> assert false
             )
@@ -5747,6 +5744,14 @@ and trans_ambient_declaration ((kind, body) : mt) : CST.ambient_declaration =
                                     | _ -> assert false
                                     )
                                   )
+                              | Alt (2, v) ->
+                                  `Flow_comp_sign (
+                                    trans_flow_component_signature (Run.matcher_token v)
+                                  )
+                              | Alt (3, v) ->
+                                  `Flow_hook_sign (
+                                    trans_flow_hook_signature (Run.matcher_token v)
+                                  )
                               | _ -> assert false
                               )
                             )
@@ -5995,137 +6000,117 @@ and trans_arrow_function ((kind, body) : mt) : CST.arrow_function =
             ,
             (match v1 with
             | Alt (0, v) ->
-                `Choice_choice_choice_decl (
+                `Choice_choice_decl (
                   (match v with
                   | Alt (0, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
@@ -6266,134 +6251,114 @@ and trans_assignment_expression ((kind, body) : mt) : CST.assignment_expression 
                               )
                             )
                         | Alt (3, v) ->
-                            `Choice_choice_decl (
+                            `Choice_decl (
                               (match v with
                               | Alt (0, v) ->
-                                  `Choice_decl (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Decl (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Name (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Type (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Public (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Priv (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Prot (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (6, v) ->
-                                        `Over (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (7, v) ->
-                                        `Read (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (8, v) ->
-                                        `Module (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (9, v) ->
-                                        `Any (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (10, v) ->
-                                        `Num (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (11, v) ->
-                                        `Bool (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (12, v) ->
-                                        `Str (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (13, v) ->
-                                        `Symb (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (14, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (15, v) ->
-                                        `Obj (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (16, v) ->
-                                        `New (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (17, v) ->
-                                        `Choice_get (
-                                          (match v with
-                                          | Alt (0, v) ->
-                                              `Get (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (1, v) ->
-                                              `Set (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (2, v) ->
-                                              `Async (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (3, v) ->
-                                              `Static (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (4, v) ->
-                                              `Export (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (5, v) ->
-                                              `Let (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | _ -> assert false
-                                          )
-                                        )
-                                    | _ -> assert false
-                                    )
+                                  `Decl (
+                                    Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (1, v) ->
-                                  `Acce (
+                                  `Name (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (2, v) ->
-                                  `Abst (
+                                  `Type (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (3, v) ->
-                                  `Using (
+                                  `Public (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (4, v) ->
-                                  `Opaque (
+                                  `Priv (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (5, v) ->
-                                  `Comp (
+                                  `Prot (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (6, v) ->
+                                  `Over (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (7, v) ->
+                                  `Read (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (8, v) ->
+                                  `Module (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (9, v) ->
+                                  `Any (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (10, v) ->
+                                  `Num (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (11, v) ->
+                                  `Bool (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (12, v) ->
+                                  `Str (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (13, v) ->
+                                  `Symb (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (14, v) ->
+                                  `Export (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (15, v) ->
+                                  `Obj (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (16, v) ->
+                                  `Get (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (17, v) ->
+                                  `Set (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (18, v) ->
+                                  `Async (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (19, v) ->
+                                  `Static (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (20, v) ->
+                                  `Acce (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (21, v) ->
+                                  `Abst (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (22, v) ->
+                                  `Using (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (23, v) ->
+                                  `Opaque (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (24, v) ->
+                                  `Comp (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (25, v) ->
                                   `Hook (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (26, v) ->
+                                  `Unique (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | _ -> assert false
@@ -6530,134 +6495,114 @@ and trans_augmented_assignment_lhs ((kind, body) : mt) : CST.augmented_assignmen
                   trans_subscript_expression (Run.matcher_token v)
                 )
             | Alt (2, v) ->
-                `Choice_choice_decl (
+                `Choice_decl (
                   (match v with
                   | Alt (0, v) ->
-                      `Choice_decl (
-                        (match v with
-                        | Alt (0, v) ->
-                            `Decl (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (1, v) ->
-                            `Name (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (2, v) ->
-                            `Type (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (3, v) ->
-                            `Public (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (4, v) ->
-                            `Priv (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (5, v) ->
-                            `Prot (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (6, v) ->
-                            `Over (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (7, v) ->
-                            `Read (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (8, v) ->
-                            `Module (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (9, v) ->
-                            `Any (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (10, v) ->
-                            `Num (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (11, v) ->
-                            `Bool (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (12, v) ->
-                            `Str (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (13, v) ->
-                            `Symb (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (14, v) ->
-                            `Export (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (15, v) ->
-                            `Obj (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (16, v) ->
-                            `New (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (17, v) ->
-                            `Choice_get (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Get (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Set (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Async (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Static (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Let (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | _ -> assert false
-                              )
-                            )
-                        | _ -> assert false
-                        )
+                      `Decl (
+                        Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (1, v) ->
-                      `Acce (
+                      `Name (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (2, v) ->
-                      `Abst (
+                      `Type (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (3, v) ->
-                      `Using (
+                      `Public (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (4, v) ->
-                      `Opaque (
+                      `Priv (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (5, v) ->
-                      `Comp (
+                      `Prot (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (6, v) ->
+                      `Over (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (7, v) ->
+                      `Read (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (8, v) ->
+                      `Module (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (9, v) ->
+                      `Any (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (10, v) ->
+                      `Num (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (11, v) ->
+                      `Bool (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (12, v) ->
+                      `Str (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (13, v) ->
+                      `Symb (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (14, v) ->
+                      `Export (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (15, v) ->
+                      `Obj (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (16, v) ->
+                      `Get (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (17, v) ->
+                      `Set (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (18, v) ->
+                      `Async (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (19, v) ->
+                      `Static (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (20, v) ->
+                      `Acce (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (21, v) ->
+                      `Abst (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (22, v) ->
+                      `Using (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (23, v) ->
+                      `Opaque (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (24, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (25, v) ->
                       `Hook (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (26, v) ->
+                      `Unique (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | _ -> assert false
@@ -8453,134 +8398,114 @@ and trans_flow_component_parameter ((kind, body) : mt) : CST.flow_component_para
                   trans_identifier (Run.matcher_token v)
                 )
             | Alt (1, v) ->
-                `Choice_choice_decl (
+                `Choice_decl (
                   (match v with
                   | Alt (0, v) ->
-                      `Choice_decl (
-                        (match v with
-                        | Alt (0, v) ->
-                            `Decl (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (1, v) ->
-                            `Name (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (2, v) ->
-                            `Type (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (3, v) ->
-                            `Public (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (4, v) ->
-                            `Priv (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (5, v) ->
-                            `Prot (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (6, v) ->
-                            `Over (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (7, v) ->
-                            `Read (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (8, v) ->
-                            `Module (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (9, v) ->
-                            `Any (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (10, v) ->
-                            `Num (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (11, v) ->
-                            `Bool (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (12, v) ->
-                            `Str (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (13, v) ->
-                            `Symb (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (14, v) ->
-                            `Export (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (15, v) ->
-                            `Obj (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (16, v) ->
-                            `New (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (17, v) ->
-                            `Choice_get (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Get (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Set (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Async (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Static (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Let (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | _ -> assert false
-                              )
-                            )
-                        | _ -> assert false
-                        )
+                      `Decl (
+                        Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (1, v) ->
-                      `Acce (
+                      `Name (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (2, v) ->
-                      `Abst (
+                      `Type (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (3, v) ->
-                      `Using (
+                      `Public (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (4, v) ->
-                      `Opaque (
+                      `Priv (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (5, v) ->
-                      `Comp (
+                      `Prot (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (6, v) ->
+                      `Over (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (7, v) ->
+                      `Read (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (8, v) ->
+                      `Module (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (9, v) ->
+                      `Any (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (10, v) ->
+                      `Num (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (11, v) ->
+                      `Bool (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (12, v) ->
+                      `Str (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (13, v) ->
+                      `Symb (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (14, v) ->
+                      `Export (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (15, v) ->
+                      `Obj (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (16, v) ->
+                      `Get (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (17, v) ->
+                      `Set (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (18, v) ->
+                      `Async (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (19, v) ->
+                      `Static (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (20, v) ->
+                      `Acce (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (21, v) ->
+                      `Abst (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (22, v) ->
+                      `Using (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (23, v) ->
+                      `Opaque (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (24, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (25, v) ->
                       `Hook (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (26, v) ->
+                      `Unique (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | _ -> assert false
@@ -9117,134 +9042,114 @@ and trans_for_header ((kind, body) : mt) : CST.for_header =
                                     )
                                   )
                               | Alt (3, v) ->
-                                  `Choice_choice_decl (
+                                  `Choice_decl (
                                     (match v with
                                     | Alt (0, v) ->
-                                        `Choice_decl (
-                                          (match v with
-                                          | Alt (0, v) ->
-                                              `Decl (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (1, v) ->
-                                              `Name (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (2, v) ->
-                                              `Type (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (3, v) ->
-                                              `Public (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (4, v) ->
-                                              `Priv (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (5, v) ->
-                                              `Prot (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (6, v) ->
-                                              `Over (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (7, v) ->
-                                              `Read (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (8, v) ->
-                                              `Module (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (9, v) ->
-                                              `Any (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (10, v) ->
-                                              `Num (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (11, v) ->
-                                              `Bool (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (12, v) ->
-                                              `Str (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (13, v) ->
-                                              `Symb (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (14, v) ->
-                                              `Export (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (15, v) ->
-                                              `Obj (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (16, v) ->
-                                              `New (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (17, v) ->
-                                              `Choice_get (
-                                                (match v with
-                                                | Alt (0, v) ->
-                                                    `Get (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | Alt (1, v) ->
-                                                    `Set (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | Alt (2, v) ->
-                                                    `Async (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | Alt (3, v) ->
-                                                    `Static (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | Alt (4, v) ->
-                                                    `Export (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | Alt (5, v) ->
-                                                    `Let (
-                                                      Run.trans_token (Run.matcher_token v)
-                                                    )
-                                                | _ -> assert false
-                                                )
-                                              )
-                                          | _ -> assert false
-                                          )
+                                        `Decl (
+                                          Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (1, v) ->
-                                        `Acce (
+                                        `Name (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (2, v) ->
-                                        `Abst (
+                                        `Type (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (3, v) ->
-                                        `Using (
+                                        `Public (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (4, v) ->
-                                        `Opaque (
+                                        `Priv (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (5, v) ->
-                                        `Comp (
+                                        `Prot (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | Alt (6, v) ->
+                                        `Over (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (7, v) ->
+                                        `Read (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (8, v) ->
+                                        `Module (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (9, v) ->
+                                        `Any (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (10, v) ->
+                                        `Num (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (11, v) ->
+                                        `Bool (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (12, v) ->
+                                        `Str (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (13, v) ->
+                                        `Symb (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (14, v) ->
+                                        `Export (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (15, v) ->
+                                        `Obj (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (16, v) ->
+                                        `Get (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (17, v) ->
+                                        `Set (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (18, v) ->
+                                        `Async (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (19, v) ->
+                                        `Static (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (20, v) ->
+                                        `Acce (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (21, v) ->
+                                        `Abst (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (22, v) ->
+                                        `Using (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (23, v) ->
+                                        `Opaque (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (24, v) ->
+                                        `Comp (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (25, v) ->
                                         `Hook (
+                                          Run.trans_token (Run.matcher_token v)
+                                        )
+                                    | Alt (26, v) ->
+                                        `Unique (
                                           Run.trans_token (Run.matcher_token v)
                                         )
                                     | _ -> assert false
@@ -9829,6 +9734,28 @@ and trans_generic_type ((kind, body) : mt) : CST.generic_type =
             )
           )
       | Alt (2, v) ->
+          `Choice_comp_type_args (
+            (match v with
+            | Seq [v0; v1] ->
+                (
+                  (match v0 with
+                  | Alt (0, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (1, v) ->
+                      `Unique (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | _ -> assert false
+                  )
+                  ,
+                  trans_type_arguments (Run.matcher_token v1)
+                )
+            | _ -> assert false
+            )
+          )
+      | Alt (3, v) ->
           `Choice_type_query_member_exp_in_type_anno_type_args (
             (match v with
             | Seq [v0; v1] ->
@@ -10043,134 +9970,114 @@ and trans_index_signature ((kind, body) : mt) : CST.index_signature =
                               trans_identifier (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Choice_choice_decl (
+                            `Choice_decl (
                               (match v with
                               | Alt (0, v) ->
-                                  `Choice_decl (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Decl (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Name (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Type (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Public (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Priv (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Prot (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (6, v) ->
-                                        `Over (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (7, v) ->
-                                        `Read (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (8, v) ->
-                                        `Module (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (9, v) ->
-                                        `Any (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (10, v) ->
-                                        `Num (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (11, v) ->
-                                        `Bool (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (12, v) ->
-                                        `Str (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (13, v) ->
-                                        `Symb (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (14, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (15, v) ->
-                                        `Obj (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (16, v) ->
-                                        `New (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (17, v) ->
-                                        `Choice_get (
-                                          (match v with
-                                          | Alt (0, v) ->
-                                              `Get (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (1, v) ->
-                                              `Set (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (2, v) ->
-                                              `Async (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (3, v) ->
-                                              `Static (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (4, v) ->
-                                              `Export (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | Alt (5, v) ->
-                                              `Let (
-                                                Run.trans_token (Run.matcher_token v)
-                                              )
-                                          | _ -> assert false
-                                          )
-                                        )
-                                    | _ -> assert false
-                                    )
+                                  `Decl (
+                                    Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (1, v) ->
-                                  `Acce (
+                                  `Name (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (2, v) ->
-                                  `Abst (
+                                  `Type (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (3, v) ->
-                                  `Using (
+                                  `Public (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (4, v) ->
-                                  `Opaque (
+                                  `Priv (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (5, v) ->
-                                  `Comp (
+                                  `Prot (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | Alt (6, v) ->
+                                  `Over (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (7, v) ->
+                                  `Read (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (8, v) ->
+                                  `Module (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (9, v) ->
+                                  `Any (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (10, v) ->
+                                  `Num (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (11, v) ->
+                                  `Bool (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (12, v) ->
+                                  `Str (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (13, v) ->
+                                  `Symb (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (14, v) ->
+                                  `Export (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (15, v) ->
+                                  `Obj (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (16, v) ->
+                                  `Get (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (17, v) ->
+                                  `Set (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (18, v) ->
+                                  `Async (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (19, v) ->
+                                  `Static (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (20, v) ->
+                                  `Acce (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (21, v) ->
+                                  `Abst (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (22, v) ->
+                                  `Using (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (23, v) ->
+                                  `Opaque (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (24, v) ->
+                                  `Comp (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (25, v) ->
                                   `Hook (
+                                    Run.trans_token (Run.matcher_token v)
+                                  )
+                              | Alt (26, v) ->
+                                  `Unique (
                                     Run.trans_token (Run.matcher_token v)
                                   )
                               | _ -> assert false
@@ -10690,134 +10597,114 @@ and trans_labeled_statement ((kind, body) : mt) : CST.labeled_statement =
                   trans_identifier (Run.matcher_token v)
                 )
             | Alt (1, v) ->
-                `Choice_choice_decl (
+                `Choice_decl (
                   (match v with
                   | Alt (0, v) ->
-                      `Choice_decl (
-                        (match v with
-                        | Alt (0, v) ->
-                            `Decl (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (1, v) ->
-                            `Name (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (2, v) ->
-                            `Type (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (3, v) ->
-                            `Public (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (4, v) ->
-                            `Priv (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (5, v) ->
-                            `Prot (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (6, v) ->
-                            `Over (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (7, v) ->
-                            `Read (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (8, v) ->
-                            `Module (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (9, v) ->
-                            `Any (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (10, v) ->
-                            `Num (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (11, v) ->
-                            `Bool (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (12, v) ->
-                            `Str (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (13, v) ->
-                            `Symb (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (14, v) ->
-                            `Export (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (15, v) ->
-                            `Obj (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (16, v) ->
-                            `New (
-                              Run.trans_token (Run.matcher_token v)
-                            )
-                        | Alt (17, v) ->
-                            `Choice_get (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Get (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Set (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Async (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Static (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Let (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | _ -> assert false
-                              )
-                            )
-                        | _ -> assert false
-                        )
+                      `Decl (
+                        Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (1, v) ->
-                      `Acce (
+                      `Name (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (2, v) ->
-                      `Abst (
+                      `Type (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (3, v) ->
-                      `Using (
+                      `Public (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (4, v) ->
-                      `Opaque (
+                      `Priv (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (5, v) ->
-                      `Comp (
+                      `Prot (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | Alt (6, v) ->
+                      `Over (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (7, v) ->
+                      `Read (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (8, v) ->
+                      `Module (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (9, v) ->
+                      `Any (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (10, v) ->
+                      `Num (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (11, v) ->
+                      `Bool (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (12, v) ->
+                      `Str (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (13, v) ->
+                      `Symb (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (14, v) ->
+                      `Export (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (15, v) ->
+                      `Obj (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (16, v) ->
+                      `Get (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (17, v) ->
+                      `Set (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (18, v) ->
+                      `Async (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (19, v) ->
+                      `Static (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (20, v) ->
+                      `Acce (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (21, v) ->
+                      `Abst (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (22, v) ->
+                      `Using (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (23, v) ->
+                      `Opaque (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (24, v) ->
+                      `Comp (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (25, v) ->
                       `Hook (
+                        Run.trans_token (Run.matcher_token v)
+                      )
+                  | Alt (26, v) ->
+                      `Unique (
                         Run.trans_token (Run.matcher_token v)
                       )
                   | _ -> assert false
@@ -11202,134 +11089,114 @@ and trans_object_ ((kind, body) : mt) : CST.object_ =
                                       trans_identifier (Run.matcher_token v)
                                     )
                                 | Alt (1, v) ->
-                                    `Choice_choice_decl (
+                                    `Choice_decl (
                                       (match v with
                                       | Alt (0, v) ->
-                                          `Choice_decl (
-                                            (match v with
-                                            | Alt (0, v) ->
-                                                `Decl (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (1, v) ->
-                                                `Name (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (2, v) ->
-                                                `Type (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (3, v) ->
-                                                `Public (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (4, v) ->
-                                                `Priv (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (5, v) ->
-                                                `Prot (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (6, v) ->
-                                                `Over (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (7, v) ->
-                                                `Read (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (8, v) ->
-                                                `Module (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (9, v) ->
-                                                `Any (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (10, v) ->
-                                                `Num (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (11, v) ->
-                                                `Bool (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (12, v) ->
-                                                `Str (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (13, v) ->
-                                                `Symb (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (14, v) ->
-                                                `Export (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (15, v) ->
-                                                `Obj (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (16, v) ->
-                                                `New (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (17, v) ->
-                                                `Choice_get (
-                                                  (match v with
-                                                  | Alt (0, v) ->
-                                                      `Get (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (1, v) ->
-                                                      `Set (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (2, v) ->
-                                                      `Async (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (3, v) ->
-                                                      `Static (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (4, v) ->
-                                                      `Export (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (5, v) ->
-                                                      `Let (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | _ -> assert false
-                                                  )
-                                                )
-                                            | _ -> assert false
-                                            )
+                                          `Decl (
+                                            Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (1, v) ->
-                                          `Acce (
+                                          `Name (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (2, v) ->
-                                          `Abst (
+                                          `Type (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (3, v) ->
-                                          `Using (
+                                          `Public (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (4, v) ->
-                                          `Opaque (
+                                          `Priv (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (5, v) ->
-                                          `Comp (
+                                          `Prot (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (6, v) ->
+                                          `Over (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (7, v) ->
+                                          `Read (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (8, v) ->
+                                          `Module (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (9, v) ->
+                                          `Any (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (10, v) ->
+                                          `Num (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (11, v) ->
+                                          `Bool (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (12, v) ->
+                                          `Str (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (13, v) ->
+                                          `Symb (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (14, v) ->
+                                          `Export (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (15, v) ->
+                                          `Obj (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (16, v) ->
+                                          `Get (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (17, v) ->
+                                          `Set (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (18, v) ->
+                                          `Async (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (19, v) ->
+                                          `Static (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (20, v) ->
+                                          `Acce (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (21, v) ->
+                                          `Abst (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (22, v) ->
+                                          `Using (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (23, v) ->
+                                          `Opaque (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (24, v) ->
+                                          `Comp (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (25, v) ->
                                           `Hook (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (26, v) ->
+                                          `Unique (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | _ -> assert false
@@ -11372,134 +11239,114 @@ and trans_object_ ((kind, body) : mt) : CST.object_ =
                                                 trans_identifier (Run.matcher_token v)
                                               )
                                           | Alt (1, v) ->
-                                              `Choice_choice_decl (
+                                              `Choice_decl (
                                                 (match v with
                                                 | Alt (0, v) ->
-                                                    `Choice_decl (
-                                                      (match v with
-                                                      | Alt (0, v) ->
-                                                          `Decl (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (1, v) ->
-                                                          `Name (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (2, v) ->
-                                                          `Type (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (3, v) ->
-                                                          `Public (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (4, v) ->
-                                                          `Priv (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (5, v) ->
-                                                          `Prot (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (6, v) ->
-                                                          `Over (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (7, v) ->
-                                                          `Read (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (8, v) ->
-                                                          `Module (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (9, v) ->
-                                                          `Any (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (10, v) ->
-                                                          `Num (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (11, v) ->
-                                                          `Bool (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (12, v) ->
-                                                          `Str (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (13, v) ->
-                                                          `Symb (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (14, v) ->
-                                                          `Export (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (15, v) ->
-                                                          `Obj (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (16, v) ->
-                                                          `New (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (17, v) ->
-                                                          `Choice_get (
-                                                            (match v with
-                                                            | Alt (0, v) ->
-                                                                `Get (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (1, v) ->
-                                                                `Set (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (2, v) ->
-                                                                `Async (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (3, v) ->
-                                                                `Static (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (4, v) ->
-                                                                `Export (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (5, v) ->
-                                                                `Let (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | _ -> assert false
-                                                            )
-                                                          )
-                                                      | _ -> assert false
-                                                      )
+                                                    `Decl (
+                                                      Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (1, v) ->
-                                                    `Acce (
+                                                    `Name (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (2, v) ->
-                                                    `Abst (
+                                                    `Type (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (3, v) ->
-                                                    `Using (
+                                                    `Public (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (4, v) ->
-                                                    `Opaque (
+                                                    `Priv (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (5, v) ->
-                                                    `Comp (
+                                                    `Prot (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (6, v) ->
+                                                    `Over (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (7, v) ->
+                                                    `Read (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (8, v) ->
+                                                    `Module (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (9, v) ->
+                                                    `Any (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (10, v) ->
+                                                    `Num (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (11, v) ->
+                                                    `Bool (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (12, v) ->
+                                                    `Str (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (13, v) ->
+                                                    `Symb (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (14, v) ->
+                                                    `Export (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (15, v) ->
+                                                    `Obj (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (16, v) ->
+                                                    `Get (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (17, v) ->
+                                                    `Set (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (18, v) ->
+                                                    `Async (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (19, v) ->
+                                                    `Static (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (20, v) ->
+                                                    `Acce (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (21, v) ->
+                                                    `Abst (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (22, v) ->
+                                                    `Using (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (23, v) ->
+                                                    `Opaque (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (24, v) ->
+                                                    `Comp (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (25, v) ->
                                                     `Hook (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (26, v) ->
+                                                    `Unique (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | _ -> assert false
@@ -11537,137 +11384,117 @@ and trans_object_assignment_pattern ((kind, body) : mt) : CST.object_assignment_
           (
             (match v0 with
             | Alt (0, v) ->
-                `Choice_choice_choice_decl (
+                `Choice_choice_decl (
                   (match v with
                   | Alt (0, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
@@ -11729,134 +11556,114 @@ and trans_object_pattern ((kind, body) : mt) : CST.object_pattern =
                                       trans_identifier (Run.matcher_token v)
                                     )
                                 | Alt (1, v) ->
-                                    `Choice_choice_decl (
+                                    `Choice_decl (
                                       (match v with
                                       | Alt (0, v) ->
-                                          `Choice_decl (
-                                            (match v with
-                                            | Alt (0, v) ->
-                                                `Decl (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (1, v) ->
-                                                `Name (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (2, v) ->
-                                                `Type (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (3, v) ->
-                                                `Public (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (4, v) ->
-                                                `Priv (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (5, v) ->
-                                                `Prot (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (6, v) ->
-                                                `Over (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (7, v) ->
-                                                `Read (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (8, v) ->
-                                                `Module (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (9, v) ->
-                                                `Any (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (10, v) ->
-                                                `Num (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (11, v) ->
-                                                `Bool (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (12, v) ->
-                                                `Str (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (13, v) ->
-                                                `Symb (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (14, v) ->
-                                                `Export (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (15, v) ->
-                                                `Obj (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (16, v) ->
-                                                `New (
-                                                  Run.trans_token (Run.matcher_token v)
-                                                )
-                                            | Alt (17, v) ->
-                                                `Choice_get (
-                                                  (match v with
-                                                  | Alt (0, v) ->
-                                                      `Get (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (1, v) ->
-                                                      `Set (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (2, v) ->
-                                                      `Async (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (3, v) ->
-                                                      `Static (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (4, v) ->
-                                                      `Export (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | Alt (5, v) ->
-                                                      `Let (
-                                                        Run.trans_token (Run.matcher_token v)
-                                                      )
-                                                  | _ -> assert false
-                                                  )
-                                                )
-                                            | _ -> assert false
-                                            )
+                                          `Decl (
+                                            Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (1, v) ->
-                                          `Acce (
+                                          `Name (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (2, v) ->
-                                          `Abst (
+                                          `Type (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (3, v) ->
-                                          `Using (
+                                          `Public (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (4, v) ->
-                                          `Opaque (
+                                          `Priv (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (5, v) ->
-                                          `Comp (
+                                          `Prot (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | Alt (6, v) ->
+                                          `Over (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (7, v) ->
+                                          `Read (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (8, v) ->
+                                          `Module (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (9, v) ->
+                                          `Any (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (10, v) ->
+                                          `Num (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (11, v) ->
+                                          `Bool (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (12, v) ->
+                                          `Str (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (13, v) ->
+                                          `Symb (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (14, v) ->
+                                          `Export (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (15, v) ->
+                                          `Obj (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (16, v) ->
+                                          `Get (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (17, v) ->
+                                          `Set (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (18, v) ->
+                                          `Async (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (19, v) ->
+                                          `Static (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (20, v) ->
+                                          `Acce (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (21, v) ->
+                                          `Abst (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (22, v) ->
+                                          `Using (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (23, v) ->
+                                          `Opaque (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (24, v) ->
+                                          `Comp (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (25, v) ->
                                           `Hook (
+                                            Run.trans_token (Run.matcher_token v)
+                                          )
+                                      | Alt (26, v) ->
+                                          `Unique (
                                             Run.trans_token (Run.matcher_token v)
                                           )
                                       | _ -> assert false
@@ -11899,134 +11706,114 @@ and trans_object_pattern ((kind, body) : mt) : CST.object_pattern =
                                                 trans_identifier (Run.matcher_token v)
                                               )
                                           | Alt (1, v) ->
-                                              `Choice_choice_decl (
+                                              `Choice_decl (
                                                 (match v with
                                                 | Alt (0, v) ->
-                                                    `Choice_decl (
-                                                      (match v with
-                                                      | Alt (0, v) ->
-                                                          `Decl (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (1, v) ->
-                                                          `Name (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (2, v) ->
-                                                          `Type (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (3, v) ->
-                                                          `Public (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (4, v) ->
-                                                          `Priv (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (5, v) ->
-                                                          `Prot (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (6, v) ->
-                                                          `Over (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (7, v) ->
-                                                          `Read (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (8, v) ->
-                                                          `Module (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (9, v) ->
-                                                          `Any (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (10, v) ->
-                                                          `Num (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (11, v) ->
-                                                          `Bool (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (12, v) ->
-                                                          `Str (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (13, v) ->
-                                                          `Symb (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (14, v) ->
-                                                          `Export (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (15, v) ->
-                                                          `Obj (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (16, v) ->
-                                                          `New (
-                                                            Run.trans_token (Run.matcher_token v)
-                                                          )
-                                                      | Alt (17, v) ->
-                                                          `Choice_get (
-                                                            (match v with
-                                                            | Alt (0, v) ->
-                                                                `Get (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (1, v) ->
-                                                                `Set (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (2, v) ->
-                                                                `Async (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (3, v) ->
-                                                                `Static (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (4, v) ->
-                                                                `Export (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | Alt (5, v) ->
-                                                                `Let (
-                                                                  Run.trans_token (Run.matcher_token v)
-                                                                )
-                                                            | _ -> assert false
-                                                            )
-                                                          )
-                                                      | _ -> assert false
-                                                      )
+                                                    `Decl (
+                                                      Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (1, v) ->
-                                                    `Acce (
+                                                    `Name (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (2, v) ->
-                                                    `Abst (
+                                                    `Type (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (3, v) ->
-                                                    `Using (
+                                                    `Public (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (4, v) ->
-                                                    `Opaque (
+                                                    `Priv (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (5, v) ->
-                                                    `Comp (
+                                                    `Prot (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | Alt (6, v) ->
+                                                    `Over (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (7, v) ->
+                                                    `Read (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (8, v) ->
+                                                    `Module (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (9, v) ->
+                                                    `Any (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (10, v) ->
+                                                    `Num (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (11, v) ->
+                                                    `Bool (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (12, v) ->
+                                                    `Str (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (13, v) ->
+                                                    `Symb (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (14, v) ->
+                                                    `Export (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (15, v) ->
+                                                    `Obj (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (16, v) ->
+                                                    `Get (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (17, v) ->
+                                                    `Set (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (18, v) ->
+                                                    `Async (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (19, v) ->
+                                                    `Static (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (20, v) ->
+                                                    `Acce (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (21, v) ->
+                                                    `Abst (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (22, v) ->
+                                                    `Using (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (23, v) ->
+                                                    `Opaque (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (24, v) ->
+                                                    `Comp (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (25, v) ->
                                                     `Hook (
+                                                      Run.trans_token (Run.matcher_token v)
+                                                    )
+                                                | Alt (26, v) ->
+                                                    `Unique (
                                                       Run.trans_token (Run.matcher_token v)
                                                     )
                                                 | _ -> assert false
@@ -12470,134 +12257,114 @@ and trans_pattern ((kind, body) : mt) : CST.pattern =
                         )
                       )
                   | Alt (3, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
@@ -12662,134 +12429,114 @@ and trans_primary_expression ((kind, body) : mt) : CST.primary_expression =
                         )
                       )
                   | Alt (4, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
@@ -12984,10 +12731,14 @@ and trans_primary_type ((kind, body) : mt) : CST.primary_type =
             Run.trans_token (Run.matcher_token v)
           )
       | Alt (4, v) ->
+          `Unique (
+            Run.trans_token (Run.matcher_token v)
+          )
+      | Alt (5, v) ->
           `Type_query_member_exp_in_type_anno (
             trans_type_query_member_expression_in_type_annotation (Run.matcher_token v)
           )
-      | Alt (5, v) ->
+      | Alt (6, v) ->
           `Type_query_call_exp_in_type_anno (
             trans_type_query_call_expression_in_type_annotation (Run.matcher_token v)
           )
@@ -13010,134 +12761,114 @@ and trans_property_name ((kind, body) : mt) : CST.property_name =
                         trans_identifier (Run.matcher_token v)
                       )
                   | Alt (1, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
@@ -13168,6 +12899,10 @@ and trans_property_name ((kind, body) : mt) : CST.property_name =
       | Alt (1, v) ->
           `Flow_symb_name (
             trans_flow_symbol_name (Run.matcher_token v)
+          )
+      | Alt (2, v) ->
+          `New (
+            Run.trans_token (Run.matcher_token v)
           )
       | _ -> assert false
       )
@@ -13460,134 +13195,114 @@ and trans_rest_pattern ((kind, body) : mt) : CST.rest_pattern =
                         )
                       )
                   | Alt (3, v) ->
-                      `Choice_choice_decl (
+                      `Choice_decl (
                         (match v with
                         | Alt (0, v) ->
-                            `Choice_decl (
-                              (match v with
-                              | Alt (0, v) ->
-                                  `Decl (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (1, v) ->
-                                  `Name (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (2, v) ->
-                                  `Type (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (3, v) ->
-                                  `Public (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (4, v) ->
-                                  `Priv (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (5, v) ->
-                                  `Prot (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (6, v) ->
-                                  `Over (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (7, v) ->
-                                  `Read (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (8, v) ->
-                                  `Module (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (9, v) ->
-                                  `Any (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (10, v) ->
-                                  `Num (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (11, v) ->
-                                  `Bool (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (12, v) ->
-                                  `Str (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (13, v) ->
-                                  `Symb (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (14, v) ->
-                                  `Export (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (15, v) ->
-                                  `Obj (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (16, v) ->
-                                  `New (
-                                    Run.trans_token (Run.matcher_token v)
-                                  )
-                              | Alt (17, v) ->
-                                  `Choice_get (
-                                    (match v with
-                                    | Alt (0, v) ->
-                                        `Get (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (1, v) ->
-                                        `Set (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (2, v) ->
-                                        `Async (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (3, v) ->
-                                        `Static (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (4, v) ->
-                                        `Export (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | Alt (5, v) ->
-                                        `Let (
-                                          Run.trans_token (Run.matcher_token v)
-                                        )
-                                    | _ -> assert false
-                                    )
-                                  )
-                              | _ -> assert false
-                              )
+                            `Decl (
+                              Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (1, v) ->
-                            `Acce (
+                            `Name (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (2, v) ->
-                            `Abst (
+                            `Type (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (3, v) ->
-                            `Using (
+                            `Public (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (4, v) ->
-                            `Opaque (
+                            `Priv (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (5, v) ->
-                            `Comp (
+                            `Prot (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | Alt (6, v) ->
+                            `Over (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (7, v) ->
+                            `Read (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (8, v) ->
+                            `Module (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (9, v) ->
+                            `Any (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (10, v) ->
+                            `Num (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (11, v) ->
+                            `Bool (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (12, v) ->
+                            `Str (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (13, v) ->
+                            `Symb (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (14, v) ->
+                            `Export (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (15, v) ->
+                            `Obj (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (16, v) ->
+                            `Get (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (17, v) ->
+                            `Set (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (18, v) ->
+                            `Async (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (19, v) ->
+                            `Static (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (20, v) ->
+                            `Acce (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (21, v) ->
+                            `Abst (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (22, v) ->
+                            `Using (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (23, v) ->
+                            `Opaque (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (24, v) ->
+                            `Comp (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (25, v) ->
                             `Hook (
+                              Run.trans_token (Run.matcher_token v)
+                            )
+                        | Alt (26, v) ->
+                            `Unique (
                               Run.trans_token (Run.matcher_token v)
                             )
                         | _ -> assert false
